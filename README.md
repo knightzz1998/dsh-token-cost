@@ -13,6 +13,22 @@ streams.
 - 实时性：`assistant/chunk` 的 usage 分片在流式输出途中即推送，金额随生成过程实时跳动；同一 `(turn, step)` 的最终用量替换早前样本，不重复计数。
 - 价格表完全可配置（`cordis.patch.yml`），无需改代码。
 
+## 界面预览 / Screenshots
+
+会话头部右侧的费用药丸，左侧指示灯实时反映当前计价时段（**非高峰绿灯**，高峰时段变**红灯**）：
+
+<img src="docs/screenshot-header.png" width="720" alt="会话头部费用药丸（绿灯=非高峰）">
+
+点击药丸弹出费用明细面板（token 拆分、模型、当前时段、生效单价）：
+
+<img src="docs/screenshot-panel.png" width="300" alt="费用明细面板">
+
+实际效果（头部 + 弹出面板）：
+
+<img src="docs/screenshot-context.png" width="760" alt="头部药丸与明细面板整体效果">
+
+> 说明：截图为非高峰时段（绿灯）示例；高峰时段（本地时间 9:00–12:00 / 14:00–18:00）指示灯与“当前时段”显示为红色高峰。
+
 ## 安装 / Installation
 
 对任何 DeepSeek Harness Desktop 用户（同样适用于 CLI `dsh web`）。三种方式任选其一。
