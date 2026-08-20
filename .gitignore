@@ -1,0 +1,6 @@
+# Local dev symlink to the DeepSeek Harness runtime's node_modules (never publish)
+node_modules
+
+# Editor / OS noise
+.DS_Store
+*.log

@@ -1,0 +1,94 @@
+# dsh-token-cost
+
+实时计算 DeepSeek Harness 当前会话 token 消耗金额的插件。
+
+A real-time token-cost meter plugin for DeepSeek Harness: shows the current
+session's cumulative spend in the session header, updating live while a turn
+streams.
+
+## 功能 / Features
+
+- **服务端投影**（`lib/index.js`）：注册 `tokenCost` 会话投影。回放每个会话日志，把提供方上报的每次用量（未缓存输入、缓存读取、缓存写入、输出）按模型单价折算成美元，并支持 DeepSeek 峰谷时段计价（按事件 UTC 小时判定）。
+- **客户端药丸**（`lib/client.js`）：会话头部右侧的费用小药丸实时显示累计花费；点击弹出明细（token 拆分、模型、生效单价、峰/非高峰标记）。
+- 实时性：`assistant/chunk` 的 usage 分片在流式输出途中即推送，金额随生成过程实时跳动；同一 `(turn, step)` 的最终用量替换早前样本，不重复计数。
+- 价格表完全可配置（`cordis.patch.yml`），无需改代码。
+
+## 安装 / Installation
+
+对任何 DeepSeek Harness Desktop 用户（同样适用于 CLI `dsh web`）：
+
+1. 拿到插件源码：
+
+   ```sh
+   git clone https://github.com/knightzz1998/dsh-token-cost.git
+   cd dsh-token-cost
+   ```
+
+2. 让 web profile 的 loader 能解析到它（二选一）：
+
+   ```sh
+   # 方式 A：pnpm 安装（在 profile 目录里）
+   cd ~/.dsh/profiles/web && pnpm add file:/绝对/路径/dsh-token-cost
+
+   # 方式 B：直接符号链接
+   mkdir -p ~/.dsh/profiles/web/node_modules
+   ln -sfn /绝对/路径/dsh-token-cost ~/.dsh/profiles/web/node_modules/dsh-token-cost
+   ```
+
+3. 在 `~/.dsh/profiles/web/cordis.patch.yml` 中加入 loader 行（含价格表，按需修改）：
+
+   ```yaml
+   - insert:
+       - id: token-cost
+         name: 'dsh-token-cost'
+         config:
+           currency: USD
+           cnyUsdRate: 7.2          # >0 时在明细弹层里显示 ≈¥ 换算；0 关闭
+           default:                  # 未知模型的回退价
+             input: 0.22
+             cacheRead: 0.007
+             cacheWrite: 0.22
+             output: 0.66
+             peak:
+               input: 0.44
+               cacheRead: 0.014
+               cacheWrite: 0.44
+               output: 1.32
+           models:
+             deepseek-official/deepseek-v4-flash:
+               input: 0.22
+               cacheRead: 0.007
+               cacheWrite: 0.22
+               output: 0.66
+               peak:
+                 input: 0.44
+                 cacheRead: 0.014
+                 cacheWrite: 0.44
+                 output: 1.32
+           peakHoursUtc: [[1, 4], [6, 10]]   # DeepSeek 高峰时段（UTC）；[] 关闭峰谷价
+   ```
+
+4. **重启 DeepSeek Harness Desktop**（loader 与客户端模块扫描在启动时缓存），刷新后任意有用量的会话头部右侧即可看到费用药丸。
+
+## 配置说明 / Configuration
+
+- 单价单位：美元 / 每 1,000,000 token。
+- 查找顺序：`models["<provider>/<model>"]` → `models["<model>"]` → `default`。
+- `peak` 为可选高峰价；样本事件时间落在 `peakHoursUtc` 窗口内且模型声明了 `peak` 时使用高峰价，否则用基础价。
+- 默认价格对应 [DeepSeek 官方定价](https://api-docs.deepseek.com/quick_start/pricing/) 的 deepseek-v4-flash（非高峰 / 高峰）。请以你的实际账单为准调整。
+- 计费口径与 dsh-token-meter 的 `tokenUsage` 投影一致：未缓存输入 × input、缓存读取 × cacheRead、缓存写入 × cacheWrite、输出 × output。
+
+## 工作原理 / How it works
+
+- 服务端通过 `ctx.inject(["sessionProjections"], …)` 注册一个纯折叠投影单元（`ProjectionDefinition`），由会话投影框架在事件落盘时驱动，快照走既有检查点缓存。
+- 客户端通过标准套件的 `useProjection("tokenCost")` 订阅该键；投影帧一到即重渲染，因此无需任何轮询。
+
+## 已知限制 / Limitations
+
+- 价格表在插件启动时捕获，修改 `cordis.patch.yml` 需重启生效。
+- 同一 (turn, step) 内若中途切换模型，替换样本按最新模型单价计价（极少见，误差可忽略）。
+- 客户端设置页的「插件配置」标签需要 api-proxy 白名单，本插件暂未接入，价格请在 `cordis.patch.yml` 中维护。
+
+## License
+
+MIT
