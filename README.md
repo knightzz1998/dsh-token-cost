@@ -8,7 +8,7 @@ streams.
 
 ## 功能 / Features
 
-- **服务端投影**（`lib/index.js`）：注册 `tokenCost` 会话投影。回放每个会话日志，把提供方上报的每次用量（未缓存输入、缓存读取、缓存写入、输出）按模型单价折算成美元，并支持 DeepSeek 峰谷时段计价（按事件 UTC 小时判定）。
+- **服务端投影**（`lib/index.js`）：注册 `tokenCost` 会话投影。回放每个会话日志，把提供方上报的每次用量（未缓存输入、缓存读取、缓存写入、输出）按模型单价折算成美元，并支持 DeepSeek 峰谷时段计价（按事件本地小时判定，默认高峰 9:00–12:00 / 14:00–18:00）。
 - **客户端药丸**（`lib/client.js`）：会话头部右侧的费用小药丸实时显示累计花费；点击弹出明细（token 拆分、模型、当前时段、生效单价、峰/非高峰标记）。药丸带**高峰指示灯**：当前处于价格高峰时段亮**红灯**，非高峰亮**绿灯**（按本地时钟每 30 秒刷新，跨整点自动翻转）。
 - 实时性：`assistant/chunk` 的 usage 分片在流式输出途中即推送，金额随生成过程实时跳动；同一 `(turn, step)` 的最终用量替换早前样本，不重复计数。
 - 价格表完全可配置（`cordis.patch.yml`），无需改代码。
@@ -65,7 +65,7 @@ streams.
                  cacheRead: 0.014
                  cacheWrite: 0.44
                  output: 1.32
-           peakHoursUtc: [[1, 4], [6, 10]]   # DeepSeek 高峰时段（UTC）；[] 关闭峰谷价
+           peakHours: [[9, 12], [14, 18]]    # 高峰时段（本地时间/北京时间）；[] 关闭峰谷价
    ```
 
 4. **重启 DeepSeek Harness Desktop**（loader 与客户端模块扫描在启动时缓存），刷新后任意有用量的会话头部右侧即可看到费用药丸。
@@ -74,7 +74,7 @@ streams.
 
 - 单价单位：美元 / 每 1,000,000 token。
 - 查找顺序：`models["<provider>/<model>"]` → `models["<model>"]` → `default`。
-- `peak` 为可选高峰价；样本事件时间落在 `peakHoursUtc` 窗口内且模型声明了 `peak` 时使用高峰价，否则用基础价。指示灯的“当前高峰”判断使用同一 `peakHoursUtc` 配置；设为 `[]` 即关闭峰谷价，指示灯恒为绿灯。
+- `peak` 为可选高峰价；样本事件时间落在 `peakHours` 窗口内且模型声明了 `peak` 时使用高峰价，否则用基础价。`peakHours` 按**本地时间**书写（中国用户即北京时间，DeepSeek 高峰 = 9:00–12:00 / 14:00–18:00）；指示灯的“当前高峰”判断使用同一配置，设为 `[]` 即关闭峰谷价，指示灯恒为绿灯。
 - 默认价格对应 [DeepSeek 官方定价](https://api-docs.deepseek.com/quick_start/pricing/) 的 deepseek-v4-flash（非高峰 / 高峰）。请以你的实际账单为准调整。
 - 计费口径与 dsh-token-meter 的 `tokenUsage` 投影一致：未缓存输入 × input、缓存读取 × cacheRead、缓存写入 × cacheWrite、输出 × output。
 
