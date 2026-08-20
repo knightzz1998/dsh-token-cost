@@ -15,7 +15,36 @@ streams.
 
 ## 安装 / Installation
 
-对任何 DeepSeek Harness Desktop 用户（同样适用于 CLI `dsh web`）：
+对任何 DeepSeek Harness Desktop 用户（同样适用于 CLI `dsh web`）。三种方式任选其一。
+
+### 🚀 方式一：对话安装（最省事，推荐）
+
+把下面这段提示词**原样复制**到 DeepSeek Harness 的输入框并回车，让 AI 自动帮你完成安装（需要 git 与写 `~/.dsh` 的权限，被沙箱拦截时按提示放行即可）：
+
+```text
+请帮我在 DeepSeek Harness 中安装 dsh-token-cost 插件（会话头部实时显示
+token 费用，高峰时段红灯、非高峰绿灯，点击可看明细）：
+
+1. 执行 git clone https://github.com/knightzz1998/dsh-token-cost.git 到本地
+   （如 ~/dsh-token-cost）
+2. 进入仓库目录，执行 bash install.sh
+   （脚本会把插件链接进 web profile 并在 cordis.patch.yml 写入 token-cost 配置行；
+    若文件被沙箱拦截，请申请更高权限后重试）
+3. 若 install.sh 不存在或执行失败，请手动完成：把仓库链接到
+   ~/.dsh/profiles/web/node_modules/dsh-token-cost，并在
+   ~/.dsh/profiles/web/cordis.patch.yml 中加入 id: token-cost 的 loader 行
+4. 完成后告诉我：安装完成，请重启 DeepSeek Harness Desktop 生效
+```
+
+### ⚡ 方式二：一键脚本
+
+```sh
+git clone https://github.com/knightzz1998/dsh-token-cost.git
+cd dsh-token-cost
+bash install.sh        # 幂等，可重复执行；DSH_HOME/DSH_PROFILE 可覆盖默认值
+```
+
+### 🛠️ 方式三：手动安装
 
 1. 拿到插件源码：
 
