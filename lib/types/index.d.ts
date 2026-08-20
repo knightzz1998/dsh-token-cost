@@ -43,6 +43,8 @@ export interface TokenCostProjection {
   rates: TokenCostRates | null;
   /** Whether the most recent sample was priced at peak rates. */
   peak: boolean;
+  /** Peak-hour windows (UTC), so the client can light a live peak indicator. */
+  peakHoursUtc: Array<[number, number]>;
 }
 
 declare module '@deepseek-ai/dsh-session-projection/types' {
