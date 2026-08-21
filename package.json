@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-cost",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Real-time token cost meter for the current session: host-side tokenCost session projection (per-model pricing, DeepSeek peak/off-peak aware) plus a browser header pill showing cumulative spend.",
   "type": "module",
   "main": "lib/index.js",

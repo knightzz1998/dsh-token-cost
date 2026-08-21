@@ -118,9 +118,11 @@ bash install.sh        # 幂等，可重复执行；DSH_HOME/DSH_PROFILE 可覆�
 ## 配置说明 / Configuration
 
 - 单价单位：美元 / 每 1,000,000 token。
-- 查找顺序：`models["<provider>/<model>"]` → `models["<model>"]` → `default`。
+- 查找顺序：`models["<provider>/<model>"]` → `models["<model>"]`；DeepSeek provider 未配置具体路由时才使用 `default`。其他未知 provider/model 不再静默套用 DeepSeek 价格，金额显示为 0 且单价状态为空。
+- 模型可以配置 `tiers` 阶梯价。例如 `inputTokensAbove: 272000` 表示本次请求的未缓存输入 + cache read 达到 272K 后使用该阶梯单价；多个阶梯取最高的已达到阈值。
 - `peak` 为可选高峰价；样本事件时间落在 `peakHours` 窗口内且模型声明了 `peak` 时使用高峰价，否则用基础价。`peakHours` 按**本地时间**书写（中国用户即北京时间，DeepSeek 高峰 = 9:00–12:00 / 14:00–18:00）；指示灯的“当前高峰”判断使用同一配置，设为 `[]` 即关闭峰谷价，指示灯恒为绿灯。
-- 默认价格对应 [DeepSeek 官方定价](https://api-docs.deepseek.com/quick_start/pricing/) 的 deepseek-v4-flash（非高峰 / 高峰）。请以你的实际账单为准调整。
+- 默认价格对应 [DeepSeek 官方定价](https://api-docs.deepseek.com/quick_start/pricing/) 的 deepseek-v4-flash（非高峰 / 高峰）。GPT-5.6 Luna / Terra / Sol 的配置来自本地运行时模型注册表；公开价格可参考 [GPT-5.6 API Pricing](https://www.orcarouter.ai/blog/gpt-5-6-api-pricing)。请以你的实际账单为准调整。
+- 已内置 GPT-5.6 路由：`openai/gpt-5.6-{luna,terra,sol}`、`openai-codex/gpt-5.6-{luna,terra,sol}`，以及 `openrouter/openai/gpt-5.6-{luna,terra,sol}` 和对应 `-pro` 别名。
 - 计费口径与 dsh-token-meter 的 `tokenUsage` 投影一致：未缓存输入 × input、缓存读取 × cacheRead、缓存写入 × cacheWrite、输出 × output。
 
 ## 工作原理 / How it works
